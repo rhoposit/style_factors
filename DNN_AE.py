@@ -223,7 +223,6 @@ class DNN_AE():
 
             
         if exp == "dnn-ae3": #2 encoders, 1 decoder
-            # with the shit encoding, you cannot get good reconstruction
             enc_nodes, dec_nodes = get_dual_nodes(self.latent_dim, self.img_cols)
             print(enc_nodes, dec_nodes)
             self.encoder1 = self.build_dual_encoder(enc_nodes, "ENC1")
@@ -252,7 +251,7 @@ class DNN_AE():
                                               metrics=['accuracy'])
 
         if exp == "dnn-aec": #2 encoders, 1 decoder, freeze and retrain
-            # with the shit encoding, you cannot get good reconstruction
+            # with the corrupted encoding, you cannot get good reconstruction
             enc_nodes, dec_nodes = get_dual_nodes(self.latent_dim, self.img_cols)
             print(enc_nodes, dec_nodes)
             self.encoder1 = self.build_dual_encoder(enc_nodes, "ENC1")
