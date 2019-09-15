@@ -193,7 +193,7 @@ class DNN_AE():
                                               optimizer=optimizer,
                                               metrics=['accuracy'])
 
-        if exp == "dnn-ae1" or exp == "dnn-ae2": #2 encoders, 1 decoder
+        if exp == "dnn-ae1": #2 encoders, 1 decoder
             enc_nodes, dec_nodes = get_dual_nodes(self.latent_dim, self.img_cols)
             print(enc_nodes, dec_nodes)
             self.encoder1 = self.build_dual_encoder(enc_nodes, "ENC1")
@@ -222,7 +222,7 @@ class DNN_AE():
                                               metrics=['accuracy'])
 
             
-        if exp == "dnn-ae3": #2 encoders, 1 decoder
+        if exp == "dnn-ae2": #2 encoders, 1 decoder
             enc_nodes, dec_nodes = get_dual_nodes(self.latent_dim, self.img_cols)
             print(enc_nodes, dec_nodes)
             self.encoder1 = self.build_dual_encoder(enc_nodes, "ENC1")
@@ -249,6 +249,37 @@ class DNN_AE():
             self.enc_style_classifier2.compile(loss='categorical_crossentropy',
                                               optimizer=optimizer,
                                               metrics=['accuracy'])
+            
+            
+           
+        if exp == "dnn-ae3": #2 encoders, 1 decoder
+            enc_nodes, dec_nodes = get_dual_nodes(self.latent_dim, self.img_cols)
+            print(enc_nodes, dec_nodes)
+            self.encoder1 = self.build_dual_encoder(enc_nodes, "ENC1")
+            self.encoder2 = self.build_dual_encoder(enc_nodes, "ENC2")
+            self.merge_decoder = self.build_merge_dual_decoder(dec_nodes)
+            # split encoding space between style and speaker
+            encoded_repr1 = self.encoder1(img)
+            encoded_repr2 = self.encoder2(img)
+            print("repr1", encoded_repr1.shape)
+            print("repr2", encoded_repr2.shape)
+            # reconstruct and warp mixed space for decoder
+            reconstructed_img = self.merge_decoder([encoded_repr1, encoded_repr2])
+            self.enc_shape = (self.split_latent_dim,1,)
+            print("encoded_shape", self.enc_shape)
+            print("reconstructed_img", reconstructed_img.shape)
+            # two auxiliary classifiers to guide the split encoding space
+            self.enc_style_classifier1 = self.build_enc_style_classifier("S1")
+            self.enc_style_classifier2 = self.build_enc_style_classifier("S2")
+            label_style = self.enc_style_classifier1(encoded_repr1)
+            not_label_style = self.enc_style_classifier2(encoded_repr2)
+            self.enc_style_classifier1.compile(loss='categorical_crossentropy',
+                                              optimizer=optimizer,
+                                              metrics=['accuracy'])
+            self.enc_style_classifier2.compile(loss='categorical_crossentropy',
+                                              optimizer=optimizer,
+                                              metrics=['accuracy'])
+
 
         if exp == "dnn-aec": #2 encoders, 1 decoder, freeze and retrain
             # with the corrupted encoding, you cannot get good reconstruction
@@ -297,14 +328,14 @@ class DNN_AE():
         elif exp == "dnn-ae2":
             self.autoencoder = Model(img, [reconstructed_img, label_style, not_label_style])
             self.autoencoder.compile(
-                loss=['mse', 'categorical_crossentropy',min_categorical_crossentropy],
-                loss_weights=[1.0, 1.0, 0.05],
+                loss=['mse', 'categorical_crossentropy','categorical_crossentropy'],
                 optimizer=optimizer,
                 metrics=['mae', 'accuracy', 'accuracy'] )
         elif exp == "dnn-ae3":
             self.autoencoder = Model(img, [reconstructed_img, label_style, not_label_style])
             self.autoencoder.compile(
-                loss=['mse', 'categorical_crossentropy','categorical_crossentropy'],
+                loss=['mse', 'categorical_crossentropy',min_categorical_crossentropy],
+                loss_weights=[1.0, 1.0, 0.05],
                 optimizer=optimizer,
                 metrics=['mae', 'accuracy', 'accuracy'] )
         elif exp == "dnn-aec":
